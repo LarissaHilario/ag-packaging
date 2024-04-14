@@ -164,30 +164,68 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
             print(f"Individuo {_ + 1}:")
             visualizarIndividuos(individuo[0])
             print("-----------------------")
+   
+    def generar_posicion_aleatoria(estanteria_size_x, estanteria_size_y, estanteria_size_z, paquete_longitud, paquete_anchura, paquete_altura):
+        # Genera posiciones aleatorias dentro de los límites de la estantería
+        x = random.randint(0, estanteria_size_x - paquete_longitud)
+        y = random.randint(0, estanteria_size_y - paquete_anchura)
+        z = random.randint(0, estanteria_size_z - paquete_altura)
+        return x, y, z
 
+    def verificar_colision(posicion, paquete_longitud, paquete_anchura, paquete_altura, paquetes):
+        # Verifica si hay colisión entre el nuevo paquete y los paquetes existentes
+        for p in paquetes:
+            if (posicion[0] < p.x + p.longitud and
+                posicion[0] + paquete_longitud > p.x and
+                posicion[1] < p.y + p.anchura and
+                posicion[1] + paquete_anchura > p.y and
+                posicion[2] < p.z + p.altura and
+                posicion[2] + paquete_altura > p.z):
+                return True  # Hay colisión
+        return False  # No hay colisión
 
-    def visualizarRepisa3D(repisa, repisa_index, escala=1.0):
+    def distribuir_paquetes(repisa_size_x, repisa_size_y, repisa_size_z, paquetes):
+        for paquete in paquetes:
+            # Genera posiciones aleatorias dentro de los límites de la repisa
+            x = random.uniform(0, repisa_size_x - paquete.longitud)
+            y = random.uniform(0, repisa_size_y - paquete.anchura)
+            z = random.uniform(0, repisa_size_z - paquete.altura)
+
+            # Ajusta las coordenadas si se encuentran fuera de los límites de la repisa
+            if x < 0:
+                x = 0
+            if y < 0:
+                y = 0
+            if z < 0:
+                z = 0
+            if x + paquete.longitud > repisa_size_x:
+                x = repisa_size_x - paquete.longitud
+            if y + paquete.anchura > repisa_size_y:
+                y = repisa_size_y - paquete.anchura
+            if z + paquete.altura > repisa_size_z:
+                z = repisa_size_z - paquete.altura
+
+            # Actualiza la posición del paquete
+            paquete.x, paquete.y, paquete.z = x, y, z
+
+    def visualizarRepisa3D(repisa, repisa_index, repisa_size_x, repisa_size_y, repisa_size_z, escala=1.0):
         fig = plt.figure(figsize=(10, 6))
         ax = fig.add_subplot(111, projection='3d')
 
         if repisa_index < len(repisa):
             repisa_obj = repisa[repisa_index]
 
-            # Dimensiones de la repisa establecidas en 1x3x1
-            repisa_size_x = 100  # Representa 1 metro
-            repisa_size_y = 300  # Representa 3 metros
-            repisa_size_z = 100  # Representa 1 metro
+            ax.bar3d(0, 0, 0, repisa_size_x * escala, repisa_size_y * escala, repisa_size_z * escala, color='black', alpha=0.1, linewidth=1, edgecolor='blue')
 
-            # Dibujar la repisa como borde
-            ax.bar3d(0, 0, 0, repisa_size_x * escala, repisa_size_y * escala, repisa_size_z * escala, color='black',alpha=0.3, linewidth=1, edgecolor='blue')
+            # Distribuye los paquetes dentro de la repisa
+            distribuir_paquetes(repisa_size_x * escala, repisa_size_y * escala, repisa_size_z * escala, repisa_obj.paquetes)
 
-            # Iterar sobre los paquetes y agregar barras 3D para cada uno
             for rep in repisa:
                 for paquete in rep.paquetes:
-                    # Ajustar las coordenadas para centrar los paquetes dentro de la repisa
-                    paquete_x = paquete.x + repisa_size_x / 2 - paquete.longitud / 2
-                    paquete_y = paquete.y + repisa_size_y / 2 - paquete.anchura / 2
-                    paquete_z = paquete.z + repisa_size_z / 2 - paquete.altura / 2
+                    # Asegúrate de que las coordenadas del paquete estén dentro de los límites de la repisa
+                    paquete_x = max(0, min(paquete.x, repisa_size_x - paquete.longitud))
+                    paquete_y = max(0, min(paquete.y, repisa_size_y - paquete.anchura))
+                    paquete_z = max(0, min(paquete.z, repisa_size_z - paquete.altura))
 
                     ax.bar3d(paquete_x, paquete_y, paquete_z,
                             paquete.longitud, paquete.anchura, paquete.altura,
@@ -198,8 +236,10 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
             ax.set_zlabel('Z')
             ax.set_title('Visualización de la repisa con paquetes')
             plt.show()
+            plt.savefig('grafica.png')
         else:
             print("El índice de la repisa está fuera de los límites.")
+
 
 
 
@@ -210,9 +250,14 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
         poblacion = cruza(poblacion, csv, probCruza)
         poblacion = mutacion(poblacion, probMuta, csv)
         poblacion = seleccionarMejoresIndividuos(poblacion, csv, poblacionMaxima)
+    
+    repisa_size_x = 300  # Tamaño de la repisa en el eje x
+    repisa_size_y = 100  # Tamaño de la repisa en el eje y
+    repisa_size_z = 100  # Tamaño de la repisa en el eje z
 
     poblacion.sort(key=lambda individuo: evaluarIndividuo(individuo, csv))
-    visualizarRepisa3D(poblacion[0][0], 0)
+
+    visualizarRepisa3D(poblacion[0][0], 0, repisa_size_x, repisa_size_y, repisa_size_z)
     paquetes = contarPaquetes(poblacion[0])
     print(paquetes - len(csv), "paquetes")
     paquetes = contarPaquetes(poblacion[len(poblacion[0])])
