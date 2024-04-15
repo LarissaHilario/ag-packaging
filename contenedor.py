@@ -3,8 +3,8 @@ class Repisa:
         self.x = x
         self.y = y
         self.z = z
-        self.longitud = 1
-        self.anchura = 3
+        self.longitud = 3
+        self.anchura = 1
         self.altura = 1
         self.paquetes = []
         self.color = 'black'

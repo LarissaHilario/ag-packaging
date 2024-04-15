@@ -7,6 +7,9 @@ from contenedor import Repisa
 import random
 
 espacios = 3000000
+repisa_size_x = 300  # Tamaño de la repisa en el eje x
+repisa_size_y = 100  # Tamaño de la repisa en el eje y
+repisa_size_z = 100  # Tamaño de la repisa en el eje z
 
 
 
@@ -158,12 +161,6 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
             individuo.append(estanteria)
         return individuo
 
-
-    def visualizarPoblacion(population):
-        for _, individuo in enumerate(population):
-            print(f"Individuo {_ + 1}:")
-            visualizarIndividuos(individuo[0])
-            print("-----------------------")
    
     def generar_posicion_aleatoria(estanteria_size_x, estanteria_size_y, estanteria_size_z, paquete_longitud, paquete_anchura, paquete_altura):
         # Genera posiciones aleatorias dentro de los límites de la estantería
@@ -173,7 +170,7 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
         return x, y, z
 
     def verificar_colision(posicion, paquete_longitud, paquete_anchura, paquete_altura, paquetes):
-        # Verifica si hay colisión entre el nuevo paquete y los paquetes existentes
+    # Verifica si hay colisión entre el nuevo paquete y los paquetes existentes
         for p in paquetes:
             if (posicion[0] < p.x + p.longitud and
                 posicion[0] + paquete_longitud > p.x and
@@ -185,63 +182,83 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
         return False  # No hay colisión
 
     def distribuir_paquetes(repisa_size_x, repisa_size_y, repisa_size_z, paquetes):
+        # Ordenar los paquetes por volumen de mayor a menor
+        paquetes.sort(key=lambda p: p.volumen, reverse=True)
+
+        # Inicializar la posición inicial para el primer paquete
+        current_x = current_y = current_z = 0
+
         for paquete in paquetes:
-            # Genera posiciones aleatorias dentro de los límites de la repisa
-            x = random.uniform(0, repisa_size_x - paquete.longitud)
-            y = random.uniform(0, repisa_size_y - paquete.anchura)
-            z = random.uniform(0, repisa_size_z - paquete.altura)
+            # Verificar si el paquete cabe en la posición actual
+            if current_x + paquete.longitud <= repisa_size_x and \
+            current_y + paquete.anchura <= repisa_size_y and \
+            current_z + paquete.altura <= repisa_size_z:
+                # Asignar la posición al paquete
+                paquete.x, paquete.y, paquete.z = current_x, current_y, current_z
 
-            # Ajusta las coordenadas si se encuentran fuera de los límites de la repisa
-            if x < 0:
-                x = 0
-            if y < 0:
-                y = 0
-            if z < 0:
-                z = 0
-            if x + paquete.longitud > repisa_size_x:
-                x = repisa_size_x - paquete.longitud
-            if y + paquete.anchura > repisa_size_y:
-                y = repisa_size_y - paquete.anchura
-            if z + paquete.altura > repisa_size_z:
-                z = repisa_size_z - paquete.altura
+                # Actualizar la posición actual en el eje x
+                current_x += paquete.longitud
 
-            # Actualiza la posición del paquete
-            paquete.x, paquete.y, paquete.z = x, y, z
+            else:
+                # Si el paquete no cabe en la posición actual, moverse al siguiente nivel (eje y)
+                current_y += paquete.anchura
+                current_x = 0  # Reiniciar la posición en x
+                current_z = 0  # Reiniciar la posición en z
 
-    def visualizarRepisa3D(repisa, repisa_index, repisa_size_x, repisa_size_y, repisa_size_z, escala=1.0):
+                # Verificar si se ha alcanzado el final de la repisa en el eje y
+                if current_y + paquete.anchura > repisa_size_y:
+                    # Moverse al siguiente nivel (eje z)
+                    current_z += paquete.altura
+                    current_y = 0  # Reiniciar la posición en y
+
+                    # Verificar si se ha alcanzado el final de la repisa en el eje z
+                    if current_z + paquete.altura > repisa_size_z:
+                        # Se ha llenado completamente la repisa
+                        print("La repisa está llena. No se pueden colocar más paquetes.")
+                        break
+
+
+
+
+    def visualizarPoblacion(population):
+        # Obtener el mejor individuo (el de mayor puntaje)
+        best_individual = max(population, key=lambda individuo: evaluarIndividuo(individuo, csv))
+        
+        print("Visualización de todas las estanterías del mejor individuo:")
         fig = plt.figure(figsize=(10, 6))
         ax = fig.add_subplot(111, projection='3d')
-
-        if repisa_index < len(repisa):
-            repisa_obj = repisa[repisa_index]
-
-            ax.bar3d(0, 0, 0, repisa_size_x * escala, repisa_size_y * escala, repisa_size_z * escala, color='black', alpha=0.1, linewidth=1, edgecolor='blue')
-
-            # Distribuye los paquetes dentro de la repisa
-            distribuir_paquetes(repisa_size_x * escala, repisa_size_y * escala, repisa_size_z * escala, repisa_obj.paquetes)
-
-            for rep in repisa:
-                for paquete in rep.paquetes:
-                    # Asegúrate de que las coordenadas del paquete estén dentro de los límites de la repisa
-                    paquete_x = max(0, min(paquete.x, repisa_size_x - paquete.longitud))
-                    paquete_y = max(0, min(paquete.y, repisa_size_y - paquete.anchura))
-                    paquete_z = max(0, min(paquete.z, repisa_size_z - paquete.altura))
-
-                    ax.bar3d(paquete_x, paquete_y, paquete_z,
-                            paquete.longitud, paquete.anchura, paquete.altura,
-                            color=paquete.color, alpha=0.4, linewidth=0.5, edgecolor='black')
-
-            ax.set_xlabel('X')
-            ax.set_ylabel('Y')
-            ax.set_zlabel('Z')
-            ax.set_title('Visualización de la repisa con paquetes')
-            plt.show()
-            plt.savefig('grafica.png')
-        else:
-            print("El índice de la repisa está fuera de los límites.")
+        
+        for j, estanteria in enumerate(best_individual):
+            for k, repisa in enumerate(estanteria):
+                print(f"Estantería {j+1}, Repisa {k+1}:")
+                visualizarRepisa3D(repisa, repisa_size_x, repisa_size_y, repisa_size_z)
+                print("-----------------------")
+        
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        ax.set_title('Visualización de todas las estanterías del mejor individuo')
+        plt.show()
 
 
+    def visualizarRepisa3D(repisa, repisa_size_x, repisa_size_y, repisa_size_z, escala=1.0):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d') 
+        ax.bar3d(0, 0, 0, repisa_size_x * escala, repisa_size_y * escala, repisa_size_z * escala, color='black', alpha=0.1, linewidth=1, edgecolor='blue')
 
+        for paquete in repisa.paquetes:
+            ax.bar3d(paquete.x, paquete.y, paquete.z,
+                    paquete.longitud, paquete.anchura, paquete.altura,
+                    color=paquete.color, alpha=0.4, linewidth=0.5, edgecolor='black')
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        ax.set_title('Visualización de la repisa  con paquetes')
+        plt.show()
+        plt.savefig('grafica.png')
+
+
+    
 
 
     for _ in range(iteraciones):
@@ -251,13 +268,10 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
         poblacion = mutacion(poblacion, probMuta, csv)
         poblacion = seleccionarMejoresIndividuos(poblacion, csv, poblacionMaxima)
     
-    repisa_size_x = 300  # Tamaño de la repisa en el eje x
-    repisa_size_y = 100  # Tamaño de la repisa en el eje y
-    repisa_size_z = 100  # Tamaño de la repisa en el eje z
+
 
     poblacion.sort(key=lambda individuo: evaluarIndividuo(individuo, csv))
-
-    visualizarRepisa3D(poblacion[0][0], 0, repisa_size_x, repisa_size_y, repisa_size_z)
+    visualizarPoblacion(poblacion)
     paquetes = contarPaquetes(poblacion[0])
     print(paquetes - len(csv), "paquetes")
     paquetes = contarPaquetes(poblacion[len(poblacion[0])])
