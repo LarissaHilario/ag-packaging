@@ -7,9 +7,9 @@ from contenedor import Repisa
 import random
 
 espacios = 3000000
-repisa_size_x = 300  # Tamaño de la repisa en el eje x
-repisa_size_y = 100  # Tamaño de la repisa en el eje y
-repisa_size_z = 100  # Tamaño de la repisa en el eje z
+repisa_size_x = 300  
+repisa_size_y = 100  
+repisa_size_z = 100 
 
 
 
@@ -149,7 +149,7 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
             estanteria = []
             for _ in range(repisas):
                 repisa = Repisa(0, 0, 0)  # Crear una instancia de Repisa
-                espacioRepisa = espacios // repisas  # Espacio disponible para cada repisa
+                espacioRepisa = espacios // repisas  
                 paquetes_repisa = []
                 for paquete in csv:
                     if paquete.id not in paquetesColocados and espacioRepisa >= paquete.volumen:
@@ -159,18 +159,20 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
                 repisa.paquetes = paquetes_repisa
                 estanteria.append(repisa)
             individuo.append(estanteria)
+        for estanteria in individuo:
+            for repisa in estanteria:
+                distribuir_paquetes(repisa_size_x, repisa_size_y, repisa_size_z, repisa.paquetes)
         return individuo
+
 
    
     def generar_posicion_aleatoria(estanteria_size_x, estanteria_size_y, estanteria_size_z, paquete_longitud, paquete_anchura, paquete_altura):
-        # Genera posiciones aleatorias dentro de los límites de la estantería
         x = random.randint(0, estanteria_size_x - paquete_longitud)
         y = random.randint(0, estanteria_size_y - paquete_anchura)
         z = random.randint(0, estanteria_size_z - paquete_altura)
         return x, y, z
 
     def verificar_colision(posicion, paquete_longitud, paquete_anchura, paquete_altura, paquetes):
-    # Verifica si hay colisión entre el nuevo paquete y los paquetes existentes
         for p in paquetes:
             if (posicion[0] < p.x + p.longitud and
                 posicion[0] + paquete_longitud > p.x and
@@ -182,38 +184,33 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
         return False  # No hay colisión
 
     def distribuir_paquetes(repisa_size_x, repisa_size_y, repisa_size_z, paquetes):
-        # Ordenar los paquetes por volumen de mayor a menor
+       
         paquetes.sort(key=lambda p: p.volumen, reverse=True)
-
-        # Inicializar la posición inicial para el primer paquete
         current_x = current_y = current_z = 0
 
         for paquete in paquetes:
-            # Verificar si el paquete cabe en la posición actual
+          
             if current_x + paquete.longitud <= repisa_size_x and \
             current_y + paquete.anchura <= repisa_size_y and \
             current_z + paquete.altura <= repisa_size_z:
-                # Asignar la posición al paquete
+               
                 paquete.x, paquete.y, paquete.z = current_x, current_y, current_z
 
-                # Actualizar la posición actual en el eje x
                 current_x += paquete.longitud
 
             else:
                 # Si el paquete no cabe en la posición actual, moverse al siguiente nivel (eje y)
                 current_y += paquete.anchura
-                current_x = 0  # Reiniciar la posición en x
-                current_z = 0  # Reiniciar la posición en z
+                current_x = 0  
+                current_z = 0  
 
                 # Verificar si se ha alcanzado el final de la repisa en el eje y
                 if current_y + paquete.anchura > repisa_size_y:
-                    # Moverse al siguiente nivel (eje z)
+                   
                     current_z += paquete.altura
-                    current_y = 0  # Reiniciar la posición en y
-
-                    # Verificar si se ha alcanzado el final de la repisa en el eje z
+                    current_y = 0 
+                   
                     if current_z + paquete.altura > repisa_size_z:
-                        # Se ha llenado completamente la repisa
                         print("La repisa está llena. No se pueden colocar más paquetes.")
                         break
 
@@ -221,7 +218,7 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
 
 
     def visualizarPoblacion(population):
-        # Obtener el mejor individuo (el de mayor puntaje)
+        
         best_individual = max(population, key=lambda individuo: evaluarIndividuo(individuo, csv))
         
         print("Visualización de todas las estanterías del mejor individuo:")
@@ -250,12 +247,8 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
             ax.bar3d(paquete.x, paquete.y, paquete.z,
                     paquete.longitud, paquete.anchura, paquete.altura,
                     color=paquete.color, alpha=0.4, linewidth=0.5, edgecolor='black')
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
-        ax.set_title('Visualización de la repisa  con paquetes')
-        plt.show()
         plt.savefig('grafica.png')
+        
 
 
     
