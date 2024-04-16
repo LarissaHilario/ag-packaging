@@ -194,55 +194,32 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
         return individuo
 
                         
-    def generar_posicion_aleatoria(estanteria_size_x, estanteria_size_y, estanteria_size_z, paquete_longitud, paquete_anchura, paquete_altura):
-        x = random.randint(0, estanteria_size_x - paquete_longitud)
-        y = random.randint(0, estanteria_size_y - paquete_anchura)
-        z = random.randint(0, estanteria_size_z - paquete_altura)
+    def generar_posicion_aleatoria(repisa_size_x, repisa_size_y, repisa_size_z, paquete):
+        x = random.randint(0, repisa_size_x - paquete.longitud)
+        y = random.randint(0, repisa_size_y - paquete.anchura)
+        z = random.randint(0, repisa_size_z - paquete.altura)
         return x, y, z
 
-    def verificar_colision(posicion, paquete_longitud, paquete_anchura, paquete_altura, paquetes):
-        for p in paquetes:
-            if (posicion[0] < p.x + p.longitud and
-                posicion[0] + paquete_longitud > p.x and
-                posicion[1] < p.y + p.anchura and
-                posicion[1] + paquete_anchura > p.y and
-                posicion[2] < p.z + p.altura and
-                posicion[2] + paquete_altura > p.z):
+    def verificar_colision(posicion, paquete, paquetes):
+        for otro_paquete in paquetes:
+            if (posicion[0] < otro_paquete.x + otro_paquete.longitud and
+                posicion[0] + paquete.longitud > otro_paquete.x and
+                posicion[1] < otro_paquete.y + otro_paquete.anchura and
+                posicion[1] + paquete.anchura > otro_paquete.y and
+                posicion[2] < otro_paquete.z + otro_paquete.altura and
+                posicion[2] + paquete.altura > otro_paquete.z):
                 return True  # Hay colisión
         return False  # No hay colisión
 
     def distribuir_paquetes(repisa_size_x, repisa_size_y, repisa_size_z, paquetes):
-       
-        paquetes.sort(key=lambda p: p.volumen, reverse=True)
-        current_x = current_y = current_z = 0
-
         for paquete in paquetes:
-          
-            if current_x + paquete.longitud <= repisa_size_x and \
-            current_y + paquete.anchura <= repisa_size_y and \
-            current_z + paquete.altura <= repisa_size_z:
-               
-                paquete.x, paquete.y, paquete.z = current_x, current_y, current_z
-
-                current_x += paquete.longitud
-
-            else:
-                # Si el paquete no cabe en la posición actual, moverse al siguiente nivel (eje y)
-                current_y += paquete.anchura
-                current_x = 0  
-                current_z = 0  
-
-                # Verificar si se ha alcanzado el final de la repisa en el eje y
-                if current_y + paquete.anchura > repisa_size_y:
-                   
-                    current_z += paquete.altura
-                    current_y = 0 
-                   
-                    if current_z + paquete.altura > repisa_size_z:
-                        print("La repisa está llena. No se pueden colocar más paquetes.")
-                        break
-
-
+            # Generar posición aleatoria dentro de la repisa
+            while True:
+                posicion = generar_posicion_aleatoria(repisa_size_x, repisa_size_y, repisa_size_z, paquete)
+                # Verificar colisión con otros paquetes
+                if not verificar_colision(posicion, paquete, paquetes):
+                    paquete.x, paquete.y, paquete.z = posicion
+                    break
 
 
     def visualizarPoblacion(population):
