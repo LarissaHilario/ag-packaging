@@ -140,7 +140,6 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
         return hijoLimpio
 
 
-
     def createIndividuo(csv):
         individuo = []
         paquetesSinGuardar = []
@@ -148,24 +147,53 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
         for _ in range(estanterias):
             estanteria = []
             for _ in range(repisas):
-                repisa = Repisa(0, 0, 0)  # Crear una instancia de Repisa
-                espacioRepisa = espacios // repisas  
+                c = 0
+                repisa = Repisa(0, 0, 0)
+                espacioRepisa = espacios
                 paquetes_repisa = []
-                for paquete in csv:
-                    if paquete.id not in paquetesColocados and espacioRepisa >= paquete.volumen:
+                while espacioRepisa >= 0:
+                    indice = random.randint(0, len(csv) - 1)
+                    paquete = csv[indice]
+                    volumenPaquete = paquete.volumen
+                    if (
+                        paquete.id not in paquetesColocados
+                        and espacioRepisa >= volumenPaquete
+                    ):
                         paquetes_repisa.append(paquete)
                         paquetesColocados.add(paquete.id)
                         espacioRepisa -= paquete.volumen
+                    elif paquete.id in paquetesColocados and c != len(csv):
+                        c += 1
+                        continue
+                    else:
+                        for paquete in csv:
+                            if (
+                                paquete.id not in paquetesColocados
+                                and espacioRepisa >= paquete.volumen
+                            ):
+                                paquetes_repisa.append(paquete)
+                                espacioRepisa -= paquete.volumen
+                                paquetesColocados.add(paquete.id)
+                        break
+
                 repisa.paquetes = paquetes_repisa
                 estanteria.append(repisa)
             individuo.append(estanteria)
+        paquetesGuardados = set(
+            paquete.id
+            for estanteria in individuo
+            for repisa in estanteria
+            for paquete in repisa.paquetes
+        )
         for estanteria in individuo:
             for repisa in estanteria:
                 distribuir_paquetes(repisa_size_x, repisa_size_y, repisa_size_z, repisa.paquetes)
+        for paquete in csv:
+            if paquete.id not in paquetesGuardados:
+                paquetesSinGuardar.append(paquete)
         return individuo
 
-
-   
+                        
     def generar_posicion_aleatoria(estanteria_size_x, estanteria_size_y, estanteria_size_z, paquete_longitud, paquete_anchura, paquete_altura):
         x = random.randint(0, estanteria_size_x - paquete_longitud)
         y = random.randint(0, estanteria_size_y - paquete_anchura)
@@ -250,10 +278,6 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
         plt.savefig('grafica.png')
         
 
-
-    
-
-
     for _ in range(iteraciones):
         csv = ReadData(ruta_archivo).readCsv()
         poblacion = [createIndividuo(csv) for _ in range(poblacionSize)]
@@ -261,7 +285,6 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
         poblacion = mutacion(poblacion, probMuta, csv)
         poblacion = seleccionarMejoresIndividuos(poblacion, csv, poblacionMaxima)
     
-
 
     poblacion.sort(key=lambda individuo: evaluarIndividuo(individuo, csv))
     visualizarPoblacion(poblacion)

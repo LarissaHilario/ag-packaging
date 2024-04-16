@@ -137,7 +137,6 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
             estanteria = []
             for _ in range(repisas):
                 c = 0
-
                 repisa = Repisa(0, 0, 0)  # Crear una nueva instancia de Repisa
                 espacioEstanteria = espacios
                 while espacioEstanteria >= 0:
@@ -164,7 +163,6 @@ def algoritmo_gen(poblacionSize, poblacionMaxima, probCruza, probMuta, estanteri
                                 espacioEstanteria -= paquete.volumen
                                 paquetesColocados.add(paquete.id)
                         break
-
                 estanteria.append(repisa)
             individuo.append(estanteria)
 
